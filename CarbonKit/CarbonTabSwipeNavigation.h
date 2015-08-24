@@ -54,6 +54,7 @@
  */
 @interface CarbonTabSwipeNavigation : UIViewController
 
+
 /**
  *	CarbonTabSwipeDelegate
  */
@@ -110,16 +111,17 @@
  *	@param font UIFont : font of selected state
  */
 - (void)setSelectedColor:(UIColor *)color font:(UIFont *)font;
+/**
+ *	Set the constraing value for tab height
+ *	@param constant float : determines the height for constraint
+ *	@param animates BOOL : determines if we animate the new height
+ */
+- (void)setTabHeight:(float)constant animates:(BOOL)animates;
+
 
 /**
  * Add 1 pixel shadow
  */
 - (void)addShadow;
-
-/**
- *  Set extra space on the left and the right of tab title
- *  @param extra CGFloat : left and right extra space
- */
-- (void)setExtraSpace:(CGFloat)extra;
 
 @end

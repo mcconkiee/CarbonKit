@@ -30,9 +30,8 @@
 	NSUInteger numberOfTabs;
 	NSInteger selectedIndex;
 	
-	CGFloat extraSpace;
-	
 	CGPoint previewsOffset;
+    float tabHeight;
 	
 	NSMutableArray *tabs;
 	NSMutableDictionary *viewControllers;
@@ -46,6 +45,7 @@
 	NSLayoutConstraint *indicatorLeftConst;
 	NSLayoutConstraint *indicatorWidthConst;
 	NSLayoutConstraint *indicatorHeightConst;
+    NSLayoutConstraint *tabHeightConst;
 }
 
 @end
@@ -56,12 +56,11 @@
 				    tabNames:(NSArray *)names
 				   tintColor:(UIColor *)tintColor
 				    delegate:(id)delegate {
-	
+    self->tabHeight =  0;
 	// init
 	self.delegate = delegate;
 	numberOfTabs = names.count;
 	rootViewController = viewController;
-	extraSpace = 15;
 	
 	// create page controller
 	pageController = [UIPageViewController alloc];
@@ -115,7 +114,7 @@
 	for (UIView *tabView in [segmentController subviews]) {
 		for (UIView *label in tabView.subviews) {
 			if ([label isKindOfClass:[UILabel class]]) {
-				CGFloat tabWidth = roundf([label sizeThatFits:CGSizeMake(FLT_MAX, 0)].width + extraSpace * 2);
+				CGFloat tabWidth = roundf([label sizeThatFits:CGSizeMake(FLT_MAX, 16)].width + 30); // 30 extra space
 				[segmentController setWidth:tabWidth forSegmentAtIndex:i];
 				
 				segmentedWidth += tabWidth;
@@ -178,11 +177,14 @@
 	id<UILayoutSupport> rootTopLayoutGuide = rootViewController.topLayoutGuide;
     id<UILayoutSupport> rootBottomLayoutGuide = rootViewController.bottomLayoutGuide;
 	NSDictionary *viewsDictionary = NSDictionaryOfVariableBindings(rootTopLayoutGuide, rootBottomLayoutGuide, parentView, tabScrollView, pageControllerView);
+    
+    
 	NSDictionary *metricsDictionary = @{
-										@"tabScrollViewHeight" : @44
+										@"tabScrollViewHeight" : [NSNumber numberWithFloat:self->tabHeight]
 										};
-	
-	[self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[tabScrollView(==tabScrollViewHeight)][pageControllerView]|" options:0 metrics:metricsDictionary views:viewsDictionary]];
+    NSArray *constraints = [NSLayoutConstraint constraintsWithVisualFormat:@"V:|[tabScrollView(==tabScrollViewHeight)][pageControllerView]|" options:0 metrics:metricsDictionary views:viewsDictionary];
+    self->tabHeightConst = constraints[1];
+	[self.view addConstraints:constraints];
 	[self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[tabScrollView]|" options:0 metrics:metricsDictionary views:viewsDictionary]];
 	[self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[pageControllerView]|" options:0 metrics:metricsDictionary views:viewsDictionary]];
 
@@ -291,6 +293,21 @@
 									 forState:UIControlStateSelected];
 }
 
+- (void)setTabHeight:(float)constant animates:(BOOL)animates{
+    self->tabHeight = constant;
+    self->tabHeightConst.constant = constant;
+    [self.view setNeedsUpdateConstraints];
+    if(animates){
+        [UIView animateWithDuration:0.3 animations:^{
+            [self.view layoutIfNeeded];
+        } completion:^(BOOL finished) {
+            
+        }];
+    }else{
+        [self.view layoutIfNeeded];
+    }
+}
+
 // add shadow
 - (void)addShadow {
 	float shadowHeight = 1.f/[[UIScreen mainScreen] scale];
@@ -301,11 +318,6 @@
 	[shadow.layer setShadowRadius:.3f];
 	[shadow.layer setShadowOffset:CGSizeMake(0, .2)];
 	[self.view addSubview:shadow];
-}
-
-// set extraSpace
-- (void)setExtraSpace:(CGFloat)extra {
-	extraSpace = extra;
 }
 
 - (void)segmentAction:(UISegmentedControl *)segment {
@@ -384,6 +396,8 @@
 	CGRect rect = indicator.frame;
 	rect.size.width = ((UIView*)tabs[selectedIndex]).frame.size.width;
 	indicator.frame = rect;
+    
+    //[self setTabHeight:44 animates:true];
 }
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
@@ -439,7 +453,7 @@
 		
 		for (UIView *label in tabView.subviews) {
 			if ([label isKindOfClass:[UILabel class]]) {
-				CGFloat tabWidth = roundf([label sizeThatFits:CGSizeMake(FLT_MAX, 0)].width + extraSpace * 2);
+				CGFloat tabWidth = roundf([label sizeThatFits:CGSizeMake(FLT_MAX, 0)].width + 30); // 30 extra space
 				[segmentController setWidth:tabWidth forSegmentAtIndex:i];
 				
 				segmentedWidth += tabWidth;
